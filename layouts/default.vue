@@ -1,12 +1,13 @@
 <template>
     <main>
-        <ClientOnly>
-          
+        <ClientOnly class="flex flex-col">
+            <AppHeader />
             <slot/>
+            <AppFooter />
         </ClientOnly>
     </main>
-
 </template>
+
 <script setup lang="ts">
 useHead({
     script: [
