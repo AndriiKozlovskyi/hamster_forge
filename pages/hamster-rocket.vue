@@ -22,6 +22,12 @@
             >
             <div class="absolute inset-0 flex items-center justify-center w-full h-full bg-[#20062b] opacity-45">
             </div>
+            <!-- <RocketPath/> -->
+            <canvas 
+                ref="curveCanvas"
+                class="absolute inset-0 w-full h-full z-20"
+            ></canvas>
+
                 <!-- Separate multiplier display -->
                 <div class="absolute top-4 left-0 right-0 z-30">
                     <div class="text-center text-white">
@@ -37,40 +43,15 @@
 
                 <!-- Rocket and explosion container -->
                 <div 
+                v-if="isLaunched"
                     :class="{
                         'pre-launch': isFlying && !isLaunched,
                         'launching': isFlying && !isLaunched,
                         'flying': isLaunched && !isExploding,
-                        'shake-animation': isLaunched && !isExploding,
                     }"
-                    class="absolute bottom-4 left-1/2 transform -translate-x-1/2"
+                    class="absolute bottom-0 left-0 transform origin-center"
                 >
-                <div 
-                    v-show="showWinning"
-                    class="absolute inset-0 flex items-center justify-center z-40"
-                >
-                    <span class="winning-text text-green-500 font-bold">
-                        +{{ winningAmount }}
-                    </span>
-                </div>
-                <div 
-                    v-if="showWinning || showLosing"
-                    class="absolute inset-0 flex items-center justify-center z-40"
-                >
-                    <span 
-                        :class="{
-                            'winning-text': showWinning,
-                            'losing-text': showLosing,
-                            'text-green-500': showWinning,
-                            'text-red-500': showLosing,
-                            'font-bold': true
-                        }"
-                    >
-                        {{ showWinning ? '+' : '-' }}{{ winningAmount }}
-                    </span>
-                </div>
-                    <Rocket v-show="!isExploding"/>
-                    <div v-show="isExploding" class="explosion"></div>
+                    <Rocket class="w-16 h-16"/>
                 </div>               
             </div>
             <BetPanel
@@ -85,7 +66,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, nextTick } from 'vue'
 const { useWebAppPopup } = await import('vue-tg')
 import background from '../assets/background1.png'
 import frame1 from '../assets/frame_1.png'
@@ -134,7 +115,7 @@ const canPlay = computed(() => {
 // Casino algorithm using theory of large numbers
 function calculateCrashPoint(): number {
     const e = Math.random() * 0.5 + 0.5 // Random factor between 0.5 and 1
-    return Math.max(1, (Math.random() * e * 3)) // Max multiplier is 3x
+    return Math.max(1.55, (Math.random() * e * 3)) // Max multiplier is 3x
 }
 
 // Game logic
@@ -162,6 +143,11 @@ function startGame() {
     points.value -= betAmount.value
     crashPoint = calculateCrashPoint()
     currentMultiplier.value = 1.00
+
+    // Wait for next tick to ensure canvas is mounted
+    nextTick(() => {
+        drawParabolaCurve()
+    })
 
     // Start the launch sequence after 1 second
     setTimeout(() => {
@@ -224,7 +210,7 @@ function endGame(voluntary: boolean) {
         isLaunched.value = false
         currentMultiplier.value = 1.00
         isExploding.value = false
-    }, 2000)
+    })
 }
 
 // Update the multiplierStyle computed property
@@ -241,6 +227,55 @@ const multiplierStyle = computed(() => {
         textShadow: `0 0 10px hsl(${baseHue}, ${saturation}%, ${lightness}%, 0.5)`
     }
 })
+
+// Add to script section
+const curveCanvas = ref<HTMLCanvasElement | null>(null)
+
+function drawParabolaCurve() {
+    const canvas = curveCanvas.value
+    if (!canvas) return
+    
+    const ctx = canvas.getContext('2d')
+    if (!ctx) return
+    
+    canvas.width = canvas.offsetWidth
+    canvas.height = canvas.offsetHeight
+    
+    ctx.clearRect(0, 0, canvas.width, canvas.height)
+    
+    // Draw filled area under curve
+    ctx.beginPath()
+    ctx.moveTo(0, canvas.height) // Start from bottom-left
+    
+    for (let x = 0; x <= canvas.width; x++) {
+        const progress = x / canvas.width
+        // Modified equation for right-rising curve
+        const y = canvas.height - (canvas.height * 0.8) * (progress * progress)
+        ctx.lineTo(x, y)
+    }
+    
+    ctx.lineTo(canvas.width, canvas.height)
+    ctx.closePath()
+    
+    // Fill with semi-transparent purple
+    ctx.fillStyle = 'rgba(139, 49, 255, 0.1)'
+    ctx.fill()
+    
+    // Draw dotted line
+    ctx.beginPath()
+    ctx.moveTo(0, canvas.height)
+    
+    for (let x = 0; x <= canvas.width; x++) {
+        const progress = x / canvas.width
+        const y = canvas.height - (canvas.height * 0.8) * (progress * progress)
+        ctx.lineTo(x, y)
+    }
+    
+    ctx.strokeStyle = '#8b31ff'
+    ctx.lineWidth = 2
+    ctx.setLineDash([5, 5])
+    ctx.stroke()
+}
 </script>
 
 <style scoped>
@@ -253,7 +288,9 @@ const multiplierStyle = computed(() => {
 }
 
 .flying {
-    animation: fly-up-with-shake 0.5s ease-in-out forwards, post-launch-shake 0.05s ease-in-out infinite 1s;
+    animation: 
+        fly-up-with-shake 2s cubic-bezier(0.1, 0, 0.2, 1) forwards,
+        rocket-tilt 2s linear forwards;
 }
 
 .background-scroll {
@@ -290,37 +327,11 @@ const multiplierStyle = computed(() => {
 
 @keyframes fly-up-with-shake {
     0% {
-        transform: translate(-1%, 0);
+        transform: translate(0%, 0%);
     }
-    10% {
-        transform: translate(-2%, -8%);
-    }
-    20% {
-        transform: translate(0%, -16%);
-    }
-    30% {
-        transform: translate(-3%, -24%);
-    }
-    40% {
-        transform: translate(-1%, -32%);
-    }
-    50% {
-        transform: translate(-4%, -40%);
-    }
-    60% {
-        transform: translate(-2%, -48%);
-    }
-    70% {
-        transform: translate(-5%, -56%);
-    }
-    80% {
-        transform: translate(-3%, -64%);
-    }
-    90% {
-        transform: translate(-6%, -72%);
-    }
+
     100% {
-        transform: translate(-5%, -80%);
+        transform: translate(210%, -370%);
     }
 }
 
@@ -348,6 +359,15 @@ const multiplierStyle = computed(() => {
     }
 }
 
+@keyframes rocket-tilt {
+    0% {
+        rotate: 40deg;
+    }
+
+    100% {
+        rotate: 20deg;
+    }
+}
 
 @keyframes pulse {
     0%, 100% {
