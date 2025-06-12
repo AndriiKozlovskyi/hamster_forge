@@ -1,27 +1,27 @@
 <template>
-    <div class="min-h-screen bg-gray-100">
+    <div class="min-h-screen bg-[#20062b]">
         <main class="container mx-auto p-4">
             <!-- Game Header -->
             <div class="flex justify-between items-center mb-6">
-                <h1 class="text-2xl font-bold">Hamster Rocket</h1>
-                <div class="text-xl font-bold text-green-600">
-                    Points: {{ points }}
+                <h1 class="text-2xl font-bold text-white">Hamster Rocket</h1>
+                <div class="flex items-center gap-2">
+                    <CoinIcon />
+                    <span 
+                        class="text-xl font-bold points-display"
+                        :class="{ 'points-animate': isPointsAnimating }"
+                    >
+                        {{ points.toLocaleString() }}
+                    </span>
                 </div>
-            </div>
-
-            <!-- Game Area -->
-            <div 
-                class="bg-gray-800 rounded-xl p-4 mb-6 transition-colors duration-1000"
-                :class="{ 'bg-gray-900': isLaunched }"
-            >
-                <!-- Multiplier Display -->
-               
-
+            </div>    
+    
                 <!-- Rocket Animation -->
                 <div class="relative h-100 bg-gray-900 rounded-lg overflow-hidden transition-colors duration-1000"
                 :style="{ backgroundImage: `url(${background})` }"
                 :class="{ 'background-scroll': isLaunched }"
             >
+            <div class="absolute inset-0 flex items-center justify-center w-full h-full bg-[#20062b] opacity-45">
+            </div>
                 <!-- Separate multiplier display -->
                 <div class="absolute top-4 left-0 right-0 z-30">
                     <div class="text-center text-white">
@@ -71,114 +71,15 @@
                 </div>
                     <Rocket v-show="!isExploding"/>
                     <div v-show="isExploding" class="explosion"></div>
-                </div>
-
-                <!-- Add the centered Play button here -->
-                <div class="absolute inset-0 flex items-center justify-center z-20" v-if="!isFlying">
-                    <button 
-                        @click="startGame"
-                        :disabled="!canPlay"
-                        class="rounded-full p-4 bg-[#9affab] hover:bg-green-600 transition-colors disabled:opacity-50 text-white"
-                    >
-                        <svg 
-                            xmlns="http://www.w3.org/2000/svg" 
-                            viewBox="0 0 24 24" 
-                            fill="currentColor" 
-                            class="w-12 h-12"
-                        >
-                            <path 
-                                fill-rule="evenodd" 
-                                d="M4.5 5.653c0-1.426 1.529-2.33 2.779-1.643l11.54 6.348c1.295.712 1.295 2.573 0 3.285L7.28 19.991c-1.25.687-2.779-.217-2.779-1.643V5.653z" 
-                                clip-rule="evenodd" 
-                            />
-                        </svg>
-                    </button>
-                </div>
+                </div>               
             </div>
-
-            <!-- Add winning amount display inside the game area -->
-        
-            </div>
-
-            <!-- Game Controls -->
-            <div class="flex flex-row bg-gray-900 gap-4 mb-2">
-                <div class="flex flex-col text-white rounded-lg justify-center items-center gap-2">
-                    <label class="block text-sm font-medium mb-2">
-                        Bet Amount
-                    </label>
-                    <div class="flex flex-row">
-                    <button 
-                    @click="adjustBet(-100)"
-                    :disabled="isFlying"
-                    class="px-3 py-2  rounded-lg text-2xl hover:bg-gray-300 disabled:opacity-50"
-                >
-                    -
-                </button>
-                <input 
-                    type="number" 
-                    v-model="betAmount"
-                    :disabled="isFlying"
-                    class="w-full px-3 py-2 border rounded-lg"
-                    :max="points"
-                    min="0"
-                >
-                <button 
-                    @click="adjustBet(100)"
-                    :disabled="isFlying"
-                    class="px-3 py-2 rounded-lg text-2xl disabled:opacity-50"
-                >
-                    +
-                </button>
-            </div>
-                </div>
-                <div class="bg-gray-900 p-4 flex flex-col text-white items-center rounded-lg shadow">
-                    <label class="block text-sm font-medium mb-2">
-                        Limit Multiplier
-                    </label>
-                    <div class="flex flex-row w-full">
-                        <button 
-                            @click="adjustMultiplier(-0.1)"
-                            :disabled="isFlying"
-                            class="px-3 py-2 rounded-lg text-2xl hover:bg-gray-300 disabled:opacity-50"
-                        >
-                            -
-                        </button>
-                        <input 
-                            type="number" 
-                            v-model="targetMultiplier"
-                            :disabled="isFlying"
-                            class="w-full px-3 py-2 border rounded-lg"
-                            min="1.1"
-                            max="3"
-                            step="0.1"
-                        >
-                        <button 
-                            @click="adjustMultiplier(0.1)"
-                            :disabled="isFlying"
-                            class="px-3 py-2 rounded-lg text-2xl hover:bg-gray-300 disabled:opacity-50"
-                        >
-                            +
-                        </button>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Winning Amount Display -->
-            <!-- <div v-if="showWinning" class="fixed inset-0 flex items-center justify-center z-50">
-                <div class="bg-black bg-opacity-75 rounded-lg p-6 max-w-sm mx-auto text-center">
-                    <h2 class="text-2xl font-bold text-white mb-4">Congratulations!</h2>
-                    <p class="text-lg text-white mb-4">
-                        You won <span class="text-green-400 font-bold">{{ winningAmount }}</span> points!
-                    </p>
-                    <button 
-                        @click="showWinning = false"
-                        class="mt-4 px-4 py-2 rounded-lg bg-[#9affab] hover:bg-green-600 transition-colors text-white"
-                    >
-                        OK
-                    </button>
-                </div>
-            </div> -->
-            
+            <BetPanel
+                v-model:betAmount="betAmount"
+                v-model:targetMultiplier="targetMultiplier"
+                :points="points"
+                :isFlying="isFlying"
+                @start-game="startGame"
+            />
         </main>
     </div>
 </template>
@@ -197,6 +98,8 @@ import frame7 from '../assets/frame_7.png'
 import frame8 from '../assets/frame_8.png'
 import frame9 from '../assets/frame_9.png'
 import frame10 from '../assets/frame_10.png'
+import BorderlessInput from '../components/BorderlessInput.vue'
+import CoinIcon from '../components/CoinIcon.vue'
 
 const { showAlert } = useWebAppPopup()
 
@@ -216,6 +119,9 @@ const isExploding = ref(false)
 const winningAmount = ref(0)
 const showWinning = ref(false)
 const showLosing = ref(false)
+
+// Add new ref for points animation
+const isPointsAnimating = ref(false)
 
 // Computed properties
 const canPlay = computed(() => {
@@ -283,8 +189,10 @@ function startGame() {
                     points.value += amount
                     winningAmount.value = amount
                     showWinning.value = true
+                    isPointsAnimating.value = true
                     setTimeout(() => {
                         showWinning.value = false
+                        isPointsAnimating.value = false
                     }, 2000)
                 }
                 endGame(false)
@@ -302,8 +210,10 @@ function endGame(voluntary: boolean) {
     if (!voluntary && currentMultiplier.value < targetMultiplier.value) {
         showLosing.value = true
         winningAmount.value = betAmount.value
+        isPointsAnimating.value = true
         setTimeout(() => {
             showLosing.value = false
+            isPointsAnimating.value = false
         }, 2000)
     }
     
@@ -319,16 +229,16 @@ function endGame(voluntary: boolean) {
 
 // Update the multiplierStyle computed property
 const multiplierStyle = computed(() => {
-    // Calculate color transition from yellow to green
+    // Calculate color transition from light purple to deep purple
     const progress = (currentMultiplier.value - 1) / 2 // normalize between 0 and 1
-    const hue = 60 + (progress * 60) // transition from 60 (yellow) to 120 (green)
-    const saturation = 80
-    const lightness = 50
+    const baseHue = 270 // purple hue
+    const saturation = 80 + (progress * 20) // increase saturation as multiplier grows
+    const lightness = 70 - (progress * 30) // decrease lightness as multiplier grows
     
     return {
-        color: `hsl(${hue}, ${saturation}%, ${lightness}%)`,
+        color: `hsl(${baseHue}, ${saturation}%, ${lightness}%)`,
         transition: 'color 0.3s ease, transform 0.3s ease',
-        textShadow: `0 0 10px hsl(${hue}, ${saturation}%, ${lightness}%, 0.5)`
+        textShadow: `0 0 10px hsl(${baseHue}, ${saturation}%, ${lightness}%, 0.5)`
     }
 })
 </script>
@@ -534,6 +444,28 @@ const multiplierStyle = computed(() => {
     100% {
         transform: scale(1) translateY(-50px);
         opacity: 0;
+    }
+}
+
+.points-display {
+    display: inline-block;
+    transition: transform 0.3s ease-out;
+    color: #16a34a;
+}
+
+.points-animate {
+    animation: points-pulse 2s ease-out;
+}
+
+@keyframes points-pulse {
+    0% {
+        transform: scale(1);
+    }
+    20% {
+        transform: scale(1.5);
+    }
+    100% {
+        transform: scale(1);
     }
 }
 </style>
